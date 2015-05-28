@@ -4,23 +4,51 @@
 #
 
 import psycopg2
+from psycopg2._psycopg import Error
+
+params = {
+    'database': 'tournament',
+    'user': 'vagrant',
+    'password': '',
+    'host': 'localhost',
+    'port': 5432
+}
 
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
+    return psycopg2.connect(**params)
+    # return psycopg2.connect("dbname=tournament")
 
 
 def deleteMatches():
     """Remove all the match records from the database."""
+    conn = connect()
+    c = conn.cursor()
+    c.execute("DELETE FROM match;")
+    conn.commit()
+    conn.close()
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
+    conn = connect()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM player;")
+
+    conn.commit()
+    conn.close()
 
 
 def countPlayers():
     """Returns the number of players currently registered."""
+    conn = connect()
+    c = conn.cursor()
+    c.execute("SELECT count(*) as count from player;")
+    count = c.fetchone()
+    conn.close()
+    print(type(count[0]))
+    return count[0]
 
 
 def registerPlayer(name):
@@ -32,6 +60,19 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
+    # be sure to make this a tuple
+    values = (name,)
+    conn = connect()
+    cursor = conn.cursor()
+
+    try:
+        query = "INSERT INTO player (name) VALUES (%s)"
+        cursor.execute(query, values)
+    except Error as error:
+        print (error)
+    finally:
+        conn.commit()
+        conn.close()
 
 
 def playerStandings():
@@ -49,15 +90,28 @@ def playerStandings():
     """
 
 
-def reportMatch(winner, loser):
+def reportMatch(winner, loser, isTied=False):
     """Records the outcome of a single match between two players.
 
     Args:
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
- 
- 
+    values = (winner, loser, isTied)
+
+    conn = connect()
+    cursor = conn.cursor()
+
+    try:
+        query = "INSERT INTO match (winner_id, loser_id, tie) VALUES (%s, %s, %s)"
+        cursor.execute(query, values)
+    except Error as error:
+        print (error)
+    finally:
+        conn.commit()
+        conn.close()
+
+
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
   
@@ -73,5 +127,8 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
+
+
+
 
 
