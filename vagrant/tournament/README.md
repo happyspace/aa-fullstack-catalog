@@ -37,3 +37,7 @@ See source for the tests listed above for examples.
 #### Running the Project
 
 `python tournament_test.py`
+
+### Database Schema
+
+![Database Schema](https://github.com/happyspace/aa-fullstack-nanodegree-vm/blob/master/vagrant/tournament/images/schema.png)
