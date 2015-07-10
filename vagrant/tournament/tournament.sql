@@ -216,6 +216,21 @@ create or replace function player_count(tournament_id bigint )
   $func$
 LANGUAGE plpgsql;
 
+create or replace function get_bye_player(tournament_id bigint)
+    RETURNS INT AS
+  $func$
+  DECLARE
+      t_id ALIAS FOR $1;
+      p_id INT := 0;
+  BEGIN
+    SELECT INTO p_id player_id from standings s
+    WHERE s.tournament_id = t_id and s.is_bye_player is TRUE;
+
+    RETURN p_id;
+  END;
+  $func$
+LANGUAGE plpgsql;
+
 create or replace function add_bye_player(tournament_id bigint, bye_player_name TEXT)
     RETURNS INT AS
   $func$
@@ -224,8 +239,8 @@ create or replace function add_bye_player(tournament_id bigint, bye_player_name 
       p_name ALIAS FOR $2;
       p_id INT := 0;
   BEGIN
-    INSERT INTO player (tournament_id, bye_player_name) values (t_id, p_name) returning id into p_id;
-    INSERT INTO standings (tournament_id, player_id, is_bye_player) values (tournament_id, player_id, TRUE);
+    INSERT INTO player (name) values (p_name) returning id into p_id;
+    INSERT INTO standings (tournament_id, player_id, is_bye_player) values (t_id, p_id, TRUE);
 
     RETURN p_id;
   END;
@@ -238,33 +253,35 @@ create or replace function opponents(tournament_id bigint)
   DECLARE
       t_id ALIAS FOR $1;
   BEGIN
-    SELECT player_id, opponent_id from OPPONENTS
-    WHERE tournament_id = t_id
+    return query SELECT o.player_id, o.opponent_id from OPPONENTS o
+    WHERE o.tournament_id = t_id
     ORDER BY player_id;
   END;
   $func$
 LANGUAGE plpgsql;
 
 -- function that creates match records in a consistent way.
-create or replace function record_match(tournament_id bigint, match_id bigint,
+create or replace function record_match(tournament_id bigint,
   winner_id bigint, loser_id bigint, is_tied boolean)
 
   RETURNS INT AS
   $func$
   DECLARE
     t_id ALIAS FOR $1;
-    m_id ALIAS FOR $2;
-    w_id ALIAS FOR $3;
-    l_id ALIAS FOR $4;
-    is_tied ALIAS FOR $5;
+    w_id ALIAS FOR $2;
+    l_id ALIAS FOR $3;
+    is_tied ALIAS FOR $4;
     -- declare a variable to hold inverse outcome id
     inv_id INT;
     score INT;
     o_id INT := 1;
+    m_id INT := 0;
   BEGIN
     IF is_tied = TRUE THEN
       o_id := 3;
     END IF;
+
+    INSERT INTO match (tournament_id) VALUES (t_id) returning id into m_id;
 
     SELECT INTO inv_id inverse_id FROM outcome
     WHERE id = o_id;
@@ -284,7 +301,8 @@ create or replace function record_match(tournament_id bigint, match_id bigint,
   $func$
 LANGUAGE plpgsql;
 
-create or replace function leader_board(tournament_id bigint)
+
+create or replace function extended_leader_board(tournament_id bigint)
   RETURNS TABLE (id bigint, name text, wins bigint, matches bigint) AS
   $func$
   DECLARE
@@ -303,7 +321,7 @@ create or replace function leader_board(tournament_id bigint)
            COALESCE(vwc.wins,0) as player_wins, COALESCE(vlc.losses,0) as losses,
            COALESCE(vtc.tie,0) as tie,
            (COALESCE(vwc.wins,0) * w_score) +  (COALESCE(vtc.tie,0) * t_score)  as score,
-           COALESCE(vwc.wins,0) + COALESCE(vlc.losses,0) as player_matches,
+           COALESCE(vwc.wins,0) + COALESCE(vlc.losses,0) + COALESCE(vtc.tie,0) as player_matches,
            (COALESCE(vowc.opp_score,0) * w_score) +  (COALESCE(vtc.tie,0) * t_score) as opp_score
          from standings s
            left outer join view_winners_counts vwc on (s.player_id = vwc.player_id) and (s.tournament_id = vwc.tournament_id)
@@ -312,7 +330,23 @@ create or replace function leader_board(tournament_id bigint)
            left outer join view_opp_winners_counts vowc on (s.player_id = vowc.player_id) and (s.tournament_id = vowc.tournament_id)
            join player p on (s.player_id = p.id)
          WHERE s.tournament_id = t_id and s.is_bye_player is not TRUE
-         order by vwc.tournament_id, score DESC, opp_score DESC) as leader_board;
+         order by vwc.tournament_id, score DESC, opp_score DESC) as extended_leader_board;
+  END;
+  $func$
+LANGUAGE plpgsql;
+
+
+create or replace function leader_board(tournament_id bigint)
+  RETURNS TABLE (player_id bigint, player_name text, player_wins bigint, player_matches bigint) AS
+  $func$
+  DECLARE
+    t_id ALIAS FOR $1;
+  BEGIN
+    return query select id, name, wins, matches
+    from (
+      select * from extended_leader_board(t_id)
+    ) as leader_board;
+
   END;
   $func$
 LANGUAGE plpgsql;

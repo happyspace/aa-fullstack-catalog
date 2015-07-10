@@ -3,6 +3,7 @@
 # tournament.py -- implementation of a Swiss-system tournament
 #
 from random import shuffle
+from math import log, ceil
 
 import psycopg2
 from psycopg2._psycopg import Error
@@ -17,11 +18,17 @@ params = {
     'port': 5432
 }
 
+params_local = {
+    'database': 'tournament',
+    'user': 'vagrant',
+    'password': ''
+}
+
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect(cursor_factory=DictCursor, **params)
-    # return psycopg2.connect("dbname=tournament", cursor_factory=DictCursor)
+    # return psycopg2.connect(cursor_factory=DictCursor, **params)
+    return psycopg2.connect("dbname=tournament")
 
 
 def deleteMatches():
@@ -30,7 +37,7 @@ def deleteMatches():
     In addition remove all tournament records from the database.
     """
     conn = connect()
-    c = conn.cursor()
+    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     c.execute("DELETE FROM STANDINGS;")
     c.execute("DELETE FROM opponents;")
     c.execute("DELETE FROM match;")
@@ -42,7 +49,7 @@ def deleteMatches():
 def deletePlayers():
     """Remove all the player records from the database."""
     conn = connect()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute("DELETE FROM STANDINGS;")
     cur.execute("DELETE FROM opponents;")
     cur.execute("DELETE FROM match;")
@@ -54,7 +61,7 @@ def deletePlayers():
 def countPlayers(tournament_id=0):
     """Returns the number of players currently registered."""
     conn = connect()
-    c = conn.cursor()
+    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     c.execute("SELECT count(*) AS count FROM player;")
     count = c.fetchone()[0]
     conn.close()
@@ -76,7 +83,7 @@ def registerPlayer(name, tournament_id=0):
     """
     values = (name,)  # be sure to make this a tuple
     conn = connect()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     try:
         query = "INSERT INTO player (name) VALUES (%s) RETURNING id"
@@ -117,7 +124,7 @@ def playerStandings(tournament_id=0):
         tournament_id = tourney.id
     values = (tournament_id, )
     conn = connect()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     try:
         query = "select * from leader_board(%s)"
         cursor.execute(query, values)
@@ -133,7 +140,7 @@ def playerStandings(tournament_id=0):
     return standings
 
 
-def reportMatch(winner, loser, tournament_id=0, is_tied=False):
+def reportMatch(winner, loser, is_tied=False, tournament_id=0):
     """Records the outcome of a single match between two players.
 
     Args:
@@ -143,21 +150,15 @@ def reportMatch(winner, loser, tournament_id=0, is_tied=False):
     if tournament_id == 0:
         tourney = Tourney.get_most_recent()
         tournament_id = tourney.id
-
-    values = (tournament_id,)
     conn = connect()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     try:
-        # create match record
-        query = "INSERT INTO match (tournament_id) VALUES (%s) RETURNING id"
+        values = (tournament_id, winner, loser, is_tied)
+        query = "select * from record_match(%s, %s, %s, %s)"
         cursor.execute(query, values)
-        m_id = cursor.fetchone()[0]
-        # record match
-
-        values = (tournament_id, m_id, winner, loser, is_tied)
-        query = "select * from record_match(%s, %s, %s, %s, %s)"
-        cursor.execute(query, values)
+        # score = cursor.fetchone()[0]
+        # print score
 
     except Error as error:
         print (error)
@@ -181,24 +182,35 @@ def swissPairings(tournament_id=0):
         id2: the second player's unique id
         name2: the second player's name
     """
-    tourney = None
-    bye_id = None
     if tournament_id == 0:
         tourney = Tourney.get_most_recent()
-    tournament_id = tourney.id
-    paired = set()
+        tournament_id = tourney.id
+
     swiss_pairings = []
     m_count = Tourney.get_match_count(tournament_id)
     p_count = Tourney.get_player_count(tournament_id)
+    # odd number of players add in a bye player
+    has_bye = False
+    bye_id = 0
+    if p_count % 2 != 0:
+        bye_id = Tourney.add_bye_player(tournament_id)
+        has_bye = True
+    standings = playerStandings(tournament_id)
+
+    if len(standings) % 2 != 0:
+        bye_id = Tourney.get_bye_player(tournament_id)
+        has_bye = True
 
     # if there are no matches recorded then just shuffle. Round 1.
     if m_count == 0:
-        # odd number of players add in a bye player
-        if p_count % 2 != 0:
-            bye_id = Tourney.add_bye_player(tournament_id)
         standings = playerStandings(tournament_id)
         shuffle(standings)
         pair = []
+        paired = set()
+        # support bye
+        if has_bye:
+            pair.append(bye_id)
+            pair.append(Tourney.BYE_PLAYER_NAME)
         for s in standings:
             p_id = s[0]
             if p_id not in paired:
@@ -212,28 +224,57 @@ def swissPairings(tournament_id=0):
     # next rounds. first round may not have been called
     else:
         p_count = Tourney.get_player_count(tournament_id);
-        # odd number of players add in a bye player
+        # odd number of players
         if p_count % 2 != 0:
             # raise error
             raise ValueError("After round one, players must be an even number.")
         standings = playerStandings(tournament_id)
         # deal with bye up front
+        # fulfill that players may not have a rematch.
+        # * find the highest unpaired player in the standings
+        # * find the next highest unpaired player in the standings that the player has not played.
+        # standing use OMW as a criteria for ordering see documentation for 'leader_board'.
+        opponents = Tourney.get_opponents(tournament_id)
         pair = []
-        for s in standings:
+        paired = set()
+        # deal with the bye first
+        if has_bye and bye_id not in paired:
+            bye_opps = opponents.get(bye_id)
+            pair.append(bye_id)
+            pair.append(Tourney.BYE_PLAYER_NAME)
+            paired.add(bye_id)
+            for i in range(0, len(standings)):
+                bye_o = standings[i]
+                bye_o_id = bye_o[0]
+                if bye_o_id not in bye_opps:
+                    paired.add(bye_o_id)
+                    pair.append(bye_o[0])
+                    pair.append(bye_o[1])
+                    swiss_pairings.append(pair)
+                    pair = []
+                    break
+        # pair up everyone else
+        for i in range(0, len(standings)):
+            s = standings[i]
             p_id = s[0]
             if p_id not in paired:
                 pair.append(s[0])
                 pair.append(s[1])
                 paired.add(p_id)
-            if len(pair) == 4:
-                swiss_pairings.append(pair)
-                pair = []
-
-                # fulfill that players may not have a rematch.
-                # * find the highest unpaired player in the standings
-                # * find the next highest unpaired player in the standings that the player has not played.
-
-                # standing use OMW as a criteria for ordering.
+                # find a pair
+                opps = opponents.get(p_id)
+                for j in range(i, len(standings)):
+                    o = standings[j]
+                    o_id = o[0]
+                    if o_id != p_id and \
+                                    o_id not in opps and \
+                                    o_id not in paired:
+                        paired.add(o_id)
+                        pair.append(o[0])
+                        pair.append(o[1])
+                        swiss_pairings.append(pair)
+                        pair = []
+                        break
     return swiss_pairings
 
 
@@ -253,7 +294,7 @@ class Tourney(object):
             The most recent tournament in the open state
         """
         conn = connect()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         tourney = None
         try:
             query = "SELECT * FROM tournament WHERE first_recorded_match_id IS NULL ORDER BY created DESC"
@@ -270,7 +311,7 @@ class Tourney(object):
     @staticmethod
     def get_tourney(tournament_id):
         conn = connect()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         tourney = None
         try:
             values = (tournament_id,)
@@ -288,7 +329,7 @@ class Tourney(object):
     @staticmethod
     def get_most_recent():
         conn = connect()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         tourney = None
         try:
             query = "SELECT * FROM tournament ORDER BY created DESC"
@@ -305,7 +346,7 @@ class Tourney(object):
     @staticmethod
     def get_player_count(tournament_id):
         conn = connect()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         tourney = None
         try:
             values = (tournament_id,)
@@ -321,7 +362,7 @@ class Tourney(object):
     @staticmethod
     def get_match_count(tournament_id):
         conn = connect()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         try:
             values = (tournament_id,)
             query = "SELECT * FROM match_count(%s)"
@@ -335,8 +376,12 @@ class Tourney(object):
 
     @staticmethod
     def add_bye_player(tournament_id):
+        # check that there is an odd number of players in the tournament.
+        n_player = Tourney.get_player_count(tournament_id)
+        if n_player % 2 == 0:
+            raise ValueError("Tournament has an even number of players. Cannot add bye player.")
         conn = connect()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         try:
             values = (tournament_id, Tourney.BYE_PLAYER_NAME)
             query = "SELECT * FROM add_bye_player(%s, %s)"
@@ -345,22 +390,65 @@ class Tourney(object):
         except Error as error:
             print (error)
         finally:
+            conn.commit()
             conn.close()
         return player_id
 
     @staticmethod
-    def get_current_tournaments():
-        """
-
-        :return:
-        """
+    def get_bye_player(tournament_id):
+        # check that there is an odd number of players in the tournament.
+        conn = connect()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        try:
+            values = (tournament_id,)
+            query = "SELECT * FROM get_bye_player(%s)"
+            cursor.execute(query, values)
+            player_id = cursor.fetchone()[0]
+        except Error as error:
+            print (error)
+        finally:
+            conn.commit()
+            conn.close()
+        return player_id
 
     @staticmethod
-    def get_completed_tournaments():
-        """
+    def get_number_of_rounds(tournament_id):
 
-        :return:
-        """
+        n_player = Tourney.get_player_count(tournament_id)
+        rounds = int(ceil(log(len(n_player), 2)))
+
+        return rounds
+
+    @staticmethod
+    def get_number_of_matches(tournament_id):
+
+        n_player = Tourney.get_player_count(tournament_id)
+        rounds = int(ceil(n_player / 2.0))
+
+        return rounds
+
+    @staticmethod
+    def get_opponents(tournament_id):
+        conn = connect()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        opponents = {}
+        try:
+            values = (tournament_id,)
+            query = "SELECT * FROM opponents(%s)"
+            cursor.execute(query, values)
+            opps = cursor.fetchall()
+            if opps is not None:
+                for o in opps:
+                    p_id = o['player_id']
+                    if opponents.has_key(p_id):
+                        opponents.get(p_id).add(o['opponent_id'])
+                    else:
+                        opponents[p_id] = set([o['opponent_id']])
+        except Error as error:
+            print (error)
+        finally:
+            conn.close()
+        return opponents
 
     @staticmethod
     def create_tournament(name="Tournament"):
@@ -373,7 +461,7 @@ class Tourney(object):
         """
         values = (name,)
         conn = connect()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         tourney = None
         try:
             query = "INSERT INTO tournament (name) VALUES (%s) RETURNING id"
@@ -404,7 +492,7 @@ class Tourney(object):
 
     @property
     def id(self):
-        return self._id;
+        return self._id
 
     @id.setter
     def id(self, value):

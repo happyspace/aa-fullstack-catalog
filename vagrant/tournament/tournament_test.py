@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 #
 # Test cases for tournament.py
+from math import log
+from math import ceil
+import random
 
 from tournament import *
+
 
 def testDeleteMatches():
     deleteMatches()
@@ -125,6 +129,167 @@ def testPairings():
     print "8. After one match, players with one win are paired."
 
 
+def test_8_player_no_ties():
+    deleteMatches()
+    deletePlayers()
+
+    tourney = Tourney.create_tournament("8 player no ties")
+    t_id = tourney.id
+
+    registerPlayer("Twilight Sparkle", t_id)
+    registerPlayer("Fluttershy", t_id)
+    registerPlayer("Applejack", t_id)
+    registerPlayer("Pinkie Pie", t_id)
+    registerPlayer("Bruno Walton", t_id)
+    registerPlayer("Boots O'Neal", t_id)
+    registerPlayer("Cathy Burton", t_id)
+    registerPlayer("Diane Grant", t_id)
+
+    standings = playerStandings()
+    rounds = int(ceil(log(len(standings), 2)))
+
+    for i in xrange(0, rounds):
+        pairings = swissPairings(t_id)
+        for p in pairings:
+            w = random.randint(0, 1)
+            w_id = p[w * 2]
+            l_id = p[2 - (w * 2)]
+            reportMatch(w_id, l_id)
+
+    standings = playerStandings()
+    print "Winner: " + str(standings[0][1]) + " with " + str(standings[0][2]) + " wins."
+    if standings[0][2] != 3:
+        raise ValueError(
+            "After three rounds, one player will be the winner with 3 wins.")
+        # one player should be the winner
+    print "9. Eight player tournament ends with one player as the winner with 3 wins."
+
+
+def test_7_player_no_ties():
+    deleteMatches()
+    deletePlayers()
+
+    tourney = Tourney.create_tournament("7 player no ties")
+    t_id = tourney.id
+
+    registerPlayer("Twilight Sparkle", t_id)
+    registerPlayer("Fluttershy", t_id)
+    registerPlayer("Applejack", t_id)
+    registerPlayer("Pinkie Pie", t_id)
+    registerPlayer("Bruno Walton", t_id)
+    registerPlayer("Boots O'Neal", t_id)
+    registerPlayer("Cathy Burton", t_id)
+    # registerPlayer("Diane Grant", t_id)
+
+    bye_id = Tourney.add_bye_player(t_id)
+
+    standings = playerStandings()
+
+    rounds = int(ceil(log(len(standings), 2)))
+
+    for i in xrange(0, rounds):
+        pairings = swissPairings(t_id)
+        for p in pairings:
+            w = random.randint(0, 1)
+            w_id = p[w * 2]
+            l_id = p[2 - (w * 2)]
+            if w_id != bye_id:
+                reportMatch(w_id, l_id)
+            else:
+                reportMatch(l_id, w_id)
+
+    standings = playerStandings()
+    print "Winner: " + str(standings[0][1]) + " with " + str(standings[0][2]) + " wins."
+    if standings[0][2] != 3:
+        raise ValueError(
+            "After three rounds, one player will be the winner with 3 wins.")
+        # one player should be the winner
+    print "10. Seven player tournament ends with one player as the winner with 3 wins."
+
+
+def test_8_player_all_ties():
+    deleteMatches()
+    deletePlayers()
+
+    tourney = Tourney.create_tournament("7 player no ties")
+    t_id = tourney.id
+
+    registerPlayer("Twilight Sparkle", t_id)
+    registerPlayer("Fluttershy", t_id)
+    registerPlayer("Applejack", t_id)
+    registerPlayer("Pinkie Pie", t_id)
+    registerPlayer("Bruno Walton", t_id)
+    registerPlayer("Boots O'Neal", t_id)
+    registerPlayer("Cathy Burton", t_id)
+    registerPlayer("Diane Grant", t_id)
+
+    standings = playerStandings()
+
+    rounds = int(ceil(log(len(standings), 2)))
+
+    for i in xrange(0, rounds):
+        pairings = swissPairings(t_id)
+        for p in pairings:
+            w = random.randint(0, 1)
+            w_id = p[w * 2]
+            l_id = p[2 - (w * 2)]
+
+            reportMatch(w_id, l_id, True)
+
+    standings = playerStandings()
+    print "Ties: " + str(standings[0][1]) + " with " + str(standings[0][2]) + " wins " + \
+          str(standings[0][3]) + " matches."
+    if standings[0][2] != 0:
+        raise ValueError(
+            "After three rounds, no players have a win.")
+        # one player should be the winner
+    print "11. Eight player tournament ends with all players tied."
+
+def test_7_player_all_ties():
+    deleteMatches()
+    deletePlayers()
+
+    tourney = Tourney.create_tournament("7 player no ties")
+    t_id = tourney.id
+
+    registerPlayer("Twilight Sparkle", t_id)
+    registerPlayer("Fluttershy", t_id)
+    registerPlayer("Applejack", t_id)
+    registerPlayer("Pinkie Pie", t_id)
+    registerPlayer("Bruno Walton", t_id)
+    registerPlayer("Boots O'Neal", t_id)
+    registerPlayer("Cathy Burton", t_id)
+    # registerPlayer("Diane Grant", t_id)
+
+    bye_id = Tourney.add_bye_player(t_id)
+
+    standings = playerStandings()
+
+    rounds = int(ceil(log(len(standings), 2)))
+
+    for i in xrange(0, rounds):
+        pairings = swissPairings(t_id)
+        for p in pairings:
+            w = random.randint(0, 1)
+            w_id = p[w * 2]
+            l_id = p[2 - (w * 2)]
+            # byes are counted as a win
+            if w_id != bye_id:
+                if l_id == bye_id:
+                    reportMatch(w_id, l_id, False)
+                else:
+                    reportMatch(w_id, l_id, True)
+            else:
+                reportMatch(l_id, w_id, False)
+
+    standings = playerStandings()
+    print "Winner: " + str(standings[0][1]) + " with " + str(standings[0][2]) + " wins."
+    if standings[0][2] != 1 or standings[1][2] != 1 or standings[2][2] != 1 :
+        raise ValueError(
+            "After three rounds, there should be three players with one win.")
+        # one player should be the winner
+    print "12. After three rounds, there should be three players with one win."
+
 if __name__ == '__main__':
     testDeleteMatches()
     testDelete()
@@ -134,6 +299,13 @@ if __name__ == '__main__':
     testStandingsBeforeMatches()
     testReportMatches()
     testPairings()
+
+    test_8_player_no_ties()
+    test_7_player_no_ties()
+    test_8_player_all_ties()
+    test_7_player_all_ties()
+
+
     print "Success!  All tests pass!"
 
 
