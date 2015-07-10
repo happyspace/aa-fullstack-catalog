@@ -9,7 +9,7 @@ import psycopg2
 from psycopg2._psycopg import Error
 from psycopg2.extras import DictCursor, DictRow
 
-
+# params to attach to Postgres from the vagrant host.
 params = {
     'database': 'tournament',
     'user': 'vagrant',
@@ -18,15 +18,13 @@ params = {
     'port': 5432
 }
 
-params_local = {
-    'database': 'tournament',
-    'user': 'vagrant',
-    'password': ''
-}
-
 
 def connect():
-    """Connect to the PostgreSQL database.  Returns a database connection."""
+    """Connect to the PostgreSQL database.
+    Returns:
+        a database connection.
+    """
+    # worked with psycopg2 2.5. '2.4.5' happen
     # return psycopg2.connect(cursor_factory=DictCursor, **params)
     return psycopg2.connect("dbname=tournament")
 
