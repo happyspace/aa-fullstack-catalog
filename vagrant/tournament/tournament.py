@@ -221,7 +221,7 @@ def swissPairings(tournament_id=0):
 
     # next rounds. first round may not have been called
     else:
-        p_count = Tourney.get_player_count(tournament_id);
+        p_count = Tourney.get_player_count(tournament_id)
         # odd number of players
         if p_count % 2 != 0:
             # raise error
