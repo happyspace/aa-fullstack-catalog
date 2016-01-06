@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+{% extends "layout.html" %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block content %}
+    <div class="pane">
+    <h1>Delete Restaurant:</h1>
+    <h2>{{ restaurant.name }}</h2>
+    <form action="{{ url_for('delete_restaurant', restaurant_id=restaurant.id) }}" method="post">
+    <input type="submit" value="Delete"> <a href = "{{ url_for('show_restaurants') }}"> Cancel </a>
+    </form>
+    </div>
+{% endblock %}

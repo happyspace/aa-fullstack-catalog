@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+    {% block head %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <title>{% block title %}{% endblock %}</title>
+    {% endblock %}
+</head>
+<body>
+    <div>{% if not is_home %}
+        <div id="menu"><a href="{{ url_for('show_restaurants') }}">Home</a></div>
+    {% endif %}</div>
+    <div id="content">{% block content %} {% endblock %}</div>
+    <div id="footer">
+        <div id="copyr">{% block footer %} &copy; Copyright 2010 by <a href="http://happyspace.com/">Happyspace</a>. {% endblock %}</div>
+    </div>
+</body>
+</html>
