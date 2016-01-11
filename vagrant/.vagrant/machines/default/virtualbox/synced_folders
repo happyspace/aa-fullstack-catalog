@@ -1,1 +1,1 @@
-{"virtualbox":{"/vagrant":{"guestpath":"/vagrant","hostpath":"C:/git+/git-python-class/UdacityPython/fullstack/vagrant","disabled":false}}}
+{"virtualbox":{"/vagrant":{"guestpath":"/vagrant","hostpath":"C:/git+/git-python-class/UdacityPython/fullstack-catalog/vagrant","disabled":false,"__vagrantfile":true}}}
