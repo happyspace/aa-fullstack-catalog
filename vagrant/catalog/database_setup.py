@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 
 Base = declarative_base()
 
-engine = create_engine("postgres://localhost/catalog")
+engine = create_engine("postgres://vagrant@localhost/catalog")
 if not database_exists(engine.url):
     create_database(engine.url)
 
