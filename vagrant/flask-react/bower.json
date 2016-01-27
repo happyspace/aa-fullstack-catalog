@@ -1,0 +1,23 @@
+{
+  "name": "flask-react",
+  "homepage": "https://github.com/happyspace/aa-fullstack-catalog",
+  "authors": [
+    "Eddie Warner <happyspace@gmail.com>"
+  ],
+  "description": "flask react tutorial",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "./project/static/bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "^3.3.6",
+    "jquery": "^2.2.0",
+    "react": "^0.14.6"
+  }
+}
