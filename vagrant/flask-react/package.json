@@ -14,6 +14,7 @@
     "bower": "^1.7.2"
   },
   "dependencies": {
+    "babel-preset-stage-0": "^6.3.13",
     "react": "^0.14.6",
     "react-dom": "^0.14.6",
     "react-jsx": "^0.13.0"
