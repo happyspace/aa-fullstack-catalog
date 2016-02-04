@@ -1,16 +1,27 @@
 
+var data = [
+    {id: 1, author: "Pete Hunt", text: "This is one comment. moo"},
+    {id: 2, author: "Jordan Walke", text: "This is *another* comment. moo moo"}
+];
+
 class Comment extends React.Component {
     static propTypes = {
         author: React.PropTypes.string.isRequired,
-        children: React.PropTypes.array.isRequired,
+        children: React.PropTypes.array.isRequired
     };
+
+    rawMarkup(){
+        let rawMarkup = marked(this.props.children.toString(), {sanitize: true});
+        return {__html: rawMarkup};
+    }
+
     render(){
         return (
             <div className="comment">
                 <h2 className="commentAuthor">
                     {this.props.author}
                 </h2>
-                { this.props.children }
+                <span dangerouslySetInnerHTML={this.rawMarkup()}></span>
             </div>
         );
     }
@@ -18,12 +29,16 @@ class Comment extends React.Component {
 
 class CommentList extends React.Component {
     render(){
+        let commentNodes = this.props.data.map(comment => (
+            <Comment author={comment.author} key={comment.id}>
+                {comment.text}
+            </Comment>
+        ));
         return (
             <div className="commentList">
-                <Comment author="Pete Hunt">This is one comment</Comment>
-                <Comment author="Jordan Walke">This is *another* comment</Comment>
+                {commentNodes}
             </div>
-        );
+        )
     }
 }
 
@@ -42,7 +57,7 @@ class CommentBox extends React.Component{
         return (
             <div className="commentBox">
                 <h1>Comments</h1>
-                <CommentList />
+                <CommentList data={this.props.data} />
                 <CommentForm />
             </div>
         );
@@ -50,7 +65,7 @@ class CommentBox extends React.Component{
 }
 
 ReactDOM.render(
-    <CommentBox />,
+    <CommentBox data={data} />,
     document.getElementById('commentBox')
 );
 
