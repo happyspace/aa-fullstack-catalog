@@ -6,7 +6,7 @@ var data = [
 class Comment extends React.Component {
     static propTypes = {
         author: React.PropTypes.string.isRequired,
-        children: React.PropTypes.array.isRequired
+        children: React.PropTypes.string.isRequired
     };
 
     rawMarkup() {
@@ -45,7 +45,7 @@ class CommentForm extends React.Component {
     render() {
         return (
             <div className="commentForm">
-                Hello, world! I am a CommentForm.
+                Hello, world! I am a Comment Form.
             </div>
         );
     }
@@ -53,21 +53,32 @@ class CommentForm extends React.Component {
 
 class CommentBox extends React.Component {
     // define data as an array of Comment.
-    static propTypes = {data: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Comment))};
+    static propTypes = {data: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Comment)),
+                        url: React.PropTypes.string,
+                        pollInterval: React.PropTypes.number
+    };
     // define default properties.
     static defaultProps = {
-        data: []
+        data: [],
+        url: "",
+        pollInterval: 2000
     };
     // define initial state as a property initializer.
     state = {
-        data: this.props.data
+        data: this.props.data,
+        url: this.props.url
     };
 
     constructor(props) {
         super(props);
+        console.log('comment box constructor.');
     }
 
-    loadComments() {
+    setState(state) {
+        super.setState(state);
+    }
+
+    loadCommentsFromServer() {
         $.ajax({
             url: this.props.url,
             dataType: 'json',
@@ -81,10 +92,11 @@ class CommentBox extends React.Component {
         });
     }
 
-    componentDidMont() {
-        this.loadComments();
+    componentDidMount() {
+        console.log('comment box mounted.');
+        this.loadCommentsFromServer();
+        setInterval(this.loadCommentsFromServer.bind(this), this.props.pollInterval);
     }
-
 
     render() {
         return (
