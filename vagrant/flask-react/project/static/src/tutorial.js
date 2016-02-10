@@ -42,11 +42,55 @@ class CommentList extends React.Component {
 }
 
 class CommentForm extends React.Component {
+    static propTypes = {
+        author: React.PropTypes.string,
+        text: React.PropTypes.string,
+        onCommentSubmit: React.PropTypes.func
+    };
+
+    static defaultProps = {
+        author: '',
+        text: ''
+    };
+
+    state = {
+        author: this.props.author,
+        text: this.props.text
+    };
+    // use arrow functions to bind this to component instance.
+    handleAuthorChange = (e) => {
+        this.setState({author: e.target.value});
+    };
+
+    handleTextChange = (e) => {
+        this.setState({text: e.target.value});
+    };
+
+
+    handleSubmit = (e) =>  {
+        e.preventDefault();
+        let author = this.state.author.trim();
+        let text = this.state.text.trim();
+        if (!text || !author) {
+            return;
+        }
+        this.props.onCommentSubmit({author: author, text: text});
+        this.setState({author: '', text: ''});
+    };
+
     render() {
         return (
-            <div className="commentForm">
-                Hello, world! I am a Comment Form.
-            </div>
+            <form className="commentForm" onSubmit={this.handleSubmit}>
+                <input type="text"
+                       placeholder="Your name"
+                       value={this.state.author}
+                       onChange={this.handleAuthorChange}/>
+                <input type="text"
+                       placeholder="Say something..."
+                       value={this.state.text}
+                       onChange={this.handleTextChange}/>
+                <input type="submit" value="Post" />
+            </form>
         );
     }
 }
@@ -78,24 +122,45 @@ class CommentBox extends React.Component {
         super.setState(state);
     }
 
+    handleCommentSubmit = (comment) => {
+        let comments = this.state.data;
+        // set a temp id
+        comment.id = Date.now();
+        var newComments = comments.concat([comment]);
+        this.setState({data: newComments});
+        $.ajax({
+            url: this.props.url,
+            dataType: 'json',
+            type: 'POST',
+            data: comment,
+            success: (data) => {
+                this.setState({data: data});
+            },
+            error: (xhr, status, err) =>{
+                this.setState({data: comments});
+                console.error(this.props.url, status, err.toString());
+            }
+        });
+    };
+
     loadCommentsFromServer() {
         $.ajax({
             url: this.props.url,
             dataType: 'json',
             cache: false,
-            success: function (data) {
+            success: (data) => {
                 this.setState({data: data});
-            }.bind(this),
-            error: function (xhr, status, err) {
-                console.error(this.props.url, status, err.toString() + "moooo ");
-            }.bind(this)
+            },
+            error: (xhr, status, err) => {
+                console.error(this.props.url, status, err.toString() + " moooo ");
+            }
         });
     }
 
     componentDidMount() {
         console.log('comment box mounted.');
         this.loadCommentsFromServer();
-        setInterval(this.loadCommentsFromServer.bind(this), this.props.pollInterval);
+        setInterval(() => (this.loadCommentsFromServer), this.props.pollInterval);
     }
 
     render() {
@@ -103,7 +168,7 @@ class CommentBox extends React.Component {
             <div className="commentBox">
                 <h1>Comments</h1>
                 <CommentList data={this.state.data}/>
-                <CommentForm />
+                <CommentForm onCommentSubmit={this.handleCommentSubmit}/>
             </div>
         );
     }

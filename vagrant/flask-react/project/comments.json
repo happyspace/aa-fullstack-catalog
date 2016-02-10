@@ -6,7 +6,17 @@
     },
     {
         "id": 1420070400000,
-        "author": "Paul O’Shannessy",
+        "author": "Paul O\u00e2\u20ac\u2122Shannessy",
         "text": "React is *great*!"
+    },
+    {
+        "id": 1420070400001,
+        "author": "Ware Cowq",
+        "text": "**Mookies** *great*!"
+    },
+    {
+        "id": 1455129668692,
+        "author": "Ware Cow",
+        "text": "Moo Moo. I am a cow."
     }
 ]
