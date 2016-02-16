@@ -12,7 +12,12 @@
     "babel-cli": "^6.4.5",
     "babel-core": "^6.4.5",
     "bower": "^1.7.2",
-    "gulp": "^3.9.1"
+    "gulp": "^3.9.1",
+    "gulp-browserify": "^0.5.1",
+    "gulp-clean": "^0.3.1",
+    "gulp-size": "^2.0.0",
+    "react": "^0.14.7",
+    "reactify": "^1.0.0"
   },
   "dependencies": {
     "babel-preset-stage-0": "^6.3.13",
