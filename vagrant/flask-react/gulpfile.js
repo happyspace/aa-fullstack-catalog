@@ -21,7 +21,7 @@ gulp.task(
 gulp.task('clean', () => {
     gulp.src('project/static/build/*.js', {read: false})
         .pipe(clean());
-})
+});
 
 gulp.task(
     'default', ['clean'], () => {
