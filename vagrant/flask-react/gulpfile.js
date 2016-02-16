@@ -3,6 +3,7 @@
 
 const gulp = require('gulp');
 const size = require('gulp-size');
+const clean = require('gulp-clean');
 const babel = require('gulp-babel');
 
 gulp.task(
@@ -17,8 +18,13 @@ gulp.task(
     }
 );
 
+gulp.task('clean', () => {
+    gulp.src('project/static/build/*.js', {read: false})
+        .pipe(clean());
+})
+
 gulp.task(
-    'default', () => {
-        console.log("hello!")
+    'default', ['clean'], () => {
+        gulp.start('transform');
     }
 );
