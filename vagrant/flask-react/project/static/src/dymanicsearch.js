@@ -38,7 +38,7 @@ class DynamicSearch extends React.Component {
     render() {
         let countries = this.props.items;
         let searchString = this.state.searchString.trim().toLowerCase();
-        let re = new RegExp('^' + searchString);
+        let re = new RegExp(searchString);
         if(searchString.length > 0) {
             countries = countries.filter(
                 function(country) {

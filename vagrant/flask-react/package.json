@@ -11,7 +11,8 @@
   "devDependencies": {
     "babel-cli": "^6.4.5",
     "babel-core": "^6.4.5",
-    "bower": "^1.7.2"
+    "bower": "^1.7.2",
+    "gulp": "^3.9.1"
   },
   "dependencies": {
     "babel-preset-stage-0": "^6.3.13",
