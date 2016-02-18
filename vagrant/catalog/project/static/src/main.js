@@ -1,10 +1,17 @@
-var helloWorld = React.createClass({
-    render: function () {
-        return (<h2>Greetings, from Real Python!</h2>)
+
+
+class Catalog extends React.Component
+{
+    constructor(props) {
+        super(props);
+
     }
-});
+    render() {
+        return (<h2>Catalog</h2>)
+    }
+}
 
 ReactDOM.render(
-    React.createElement(helloWorld, null),
+    React.createElement(Catalog, null),
     document.getElementById('content')
 );

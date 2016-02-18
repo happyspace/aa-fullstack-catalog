@@ -13,13 +13,13 @@ gulp.task(
                 babel({
                     presets: ['es2015', 'react', 'stage-0']
                 }))
-            .pipe(gulp.dest('project/static/dst'))
+            .pipe(gulp.dest('project/static/dist'))
             .pipe(size())
     }
 );
 
 gulp.task('clean', () => {
-    gulp.src('project/static/dst/*.js', {read: false})
+    gulp.src('project/static/dist/*.js', {read: false})
         .pipe(clean());
 });
 

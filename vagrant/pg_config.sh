@@ -4,6 +4,7 @@ apt-get -qqy install postgresql python-psycopg2
 apt-get -qqy install python-flask python-sqlalchemy
 apt-get -qqy install python-pip
 apt-get -qqy install build-essential
+apt-get -qqy install git-all
 
 # update node to node 5
 curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -

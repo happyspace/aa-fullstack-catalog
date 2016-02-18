@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html>
-  <head lang="en">
+<head lang="en">
     <meta charset="UTF-8">
     <title>Catalog</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- styles -->
-  </head>
-  <body>
-    <div class="container">
-      <h1>Catalog</h1>
-      <br>
-      <div id="content"></div>
-    </div>
-    <!-- scripts -->
-  </body>
+</head>
+<body>
+<div class="container">
+    <h1>Catalog</h1>
+    <br>
+    <div id="header"></div>
+    <div id="content"></div>
+    <div id="footer"></div>
+</div>
+<!-- scripts -->
+<script src="{{ url_for('static', filename='bower_components/react/react.js') }}"></script>
+<script src="{{ url_for('static', filename='bower_components/react/react-dom.js') }}"></script>
+<script src="{{ url_for('static', filename='bower_components/jquery/dist/jquery.js') }}"></script>
+<script src="{{ url_for('static', filename='bower_components/marked/lib/marked.js') }}"></script>
+<script src="{{ url_for('static', filename='dist/main.js') }}"></script>
+</body>
 </html>
