@@ -11,7 +11,8 @@ gulp.task(
         gulp.src('project/static/src/*.js')
             .pipe(
                 babel({
-                    presets: ['es2015', 'react', 'stage-0']
+                    presets: ['es2015', 'react', 'stage-0'],
+					"plugins": ["transform-flow-strip-types"]
                 }))
             .pipe(gulp.dest('project/static/build'))
             .pipe(size())
