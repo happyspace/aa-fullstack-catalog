@@ -1,4 +1,6 @@
 
+/* @flow */
+import React, { Component, PropTypes } from 'react';
 
 class Catalog extends React.Component
 {
@@ -15,3 +17,4 @@ ReactDOM.render(
     React.createElement(Catalog, null),
     document.getElementById('content')
 );
+
