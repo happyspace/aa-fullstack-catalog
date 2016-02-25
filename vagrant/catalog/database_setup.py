@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Unicode, DateTime
+from sqlalchemy import Column, ForeignKey, Integer, String, Unicode, DateTime, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils import database_exists, create_database
@@ -19,7 +19,7 @@ print(database_exists(engine.url))
 class User(Base):
     __tablename__ = 'user'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     name = Column(Unicode(80), nullable=False)
     email = Column(Unicode(254), nullable=False)
     picture = Column(Unicode(250))
