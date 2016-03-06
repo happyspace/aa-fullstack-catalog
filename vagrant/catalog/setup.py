@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 
 install_requires = [
     'alembic==0.8.4',
@@ -40,6 +40,5 @@ setup(
     license='',
     author='Eddie Warner',
     author_email='happyspace@gmail.com',
-    description='Catalog project for Udacity Fullstack nano degree. ',
-    dependency_links=['https://github.com/happyspace/oauth2client-1#egg=oauth2client-2.0.0.post1']
+    description='Catalog project for Udacity Fullstack nano degree. '
 )
