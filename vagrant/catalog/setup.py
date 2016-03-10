@@ -4,6 +4,7 @@ install_requires = [
     'alembic==0.8.4',
     'bleach==1.4.2',
     'colorama==0.3.6',
+    'coverage==4.0.3',
     'Flask==0.10.1',
     'html5lib==0.9999999',
     'httplib2==0.9.2',
