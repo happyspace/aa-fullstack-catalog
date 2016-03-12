@@ -12,7 +12,6 @@ from subprocess import Popen, PIPE, STDOUT
 from tempfile import NamedTemporaryFile
 import os
 import sys
-import pdb
 
 # This is here so there's one line to change if I want to swap 
 # out a different script, such as markdown.pl
@@ -43,7 +42,6 @@ def run_markdown_pipe(input_text: str):
     pipe = Popen(_interpreter_and_script,
                  stdout=PIPE, stdin=PIPE, stderr=STDOUT)
     output = pipe.communicate(input=bytes(input_text, 'utf-8'))[0]
-    pdb.set_trace()
     return output.rstrip().decode('utf-8')
 
 
