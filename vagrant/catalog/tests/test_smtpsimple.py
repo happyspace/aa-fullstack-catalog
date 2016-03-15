@@ -44,6 +44,7 @@ def test_monkey_cwd_mock(monkeypatch: monkeypatch):
 #    pdb.set_trace()
     cwd = Mock(return_value="/")
     monkeypatch.setattr(os, 'getcwd', cwd)
+    assert os.getcwd() == '/'
 
 
 

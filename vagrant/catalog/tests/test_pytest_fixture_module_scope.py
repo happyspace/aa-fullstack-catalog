@@ -19,9 +19,7 @@ def otherarg(request: Any):
     return request.param
 
 
-def test_1_that_needs_resource_a(otherarg: Any):
-    if otherarg:
-        th = get_type_hints(resource_fix)
+def test_1_that_needs_resource_a(resource_fix: Any):
 #    pdb.set_trace()
     print('\n test_1_that_needs_resource_a()')
 
@@ -30,8 +28,8 @@ def test_2_that_does_not():
     print('\n test_2_that_does_not()')
 
 
-def test_3_that_does(otherarg: Any):
-    print('\n test_3_that_does()' + resource_fix.__name__)
+def test_3_that_does(resource_fix: Any):
+    print('\n test_3_that_does()')
 
 
 if __name__ == '__main__':
