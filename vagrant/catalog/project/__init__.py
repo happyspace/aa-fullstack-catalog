@@ -1,4 +1,4 @@
 
 __version__ = '1.0.0'
 
-from project import app
+from config import Config, DevelopmentConfig, ProductionConfig, TestingConfig

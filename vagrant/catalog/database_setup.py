@@ -2,37 +2,36 @@ from datetime import datetime
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Unicode, DateTime, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy import create_engine
-import datetime
 
-Base = declarative_base()
 
 engine = create_engine("postgres://vagrant@localhost/catalog")
-if not database_exists(engine.url):
-    create_database(engine.url)
 
-print(database_exists(engine.url))
+# Default scoped_session uses thread local storage
+# which will be fine here. For Flask use '_app_ctx_stack'
+# to match Flask session and application context.
+db_session = scoped_session(sessionmaker(autocommit=False,
+                                         autoflush=False,
+                                         bind=engine))
 
-
-class User(Base):
-    __tablename__ = 'user'
-
-    id = Column(BigInteger, primary_key=True)
-    name = Column(Unicode(80), nullable=False)
-    email = Column(Unicode(254), nullable=False)
-    picture = Column(Unicode(250))
-    create_date = Column('create_date', DateTime, default=datetime.datetime.now, nullable=False)
-    last_update = Column('last_update', DateTime, default=datetime.datetime.now, nullable=False)
+Base = declarative_base()
+Base.query = db_session.query_property()
 
 
-class Category(Base):
-    __tablename__ = 'category'
+def init_db():
+    import models
+    if not database_exists(engine.url):
+        create_database(engine.url)
+    print(database_exists(engine.url))
+    Base.metadata.create_all(engine)
 
-    id = Column(Integer, primary_key=True)
-    name = Column(Unicode(50), nullable=False)
-    description = Column(Unicode(200))
+
+if __name__ == '__main__':
+    init_db()
 
 
-Base.metadata.create_all(engine)
+
+
+
