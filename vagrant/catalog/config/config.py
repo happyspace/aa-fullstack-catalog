@@ -26,7 +26,7 @@ class Config(object):
     DATABASE_URI = 'postgres://vagrant@localhost/catalog'
     # WSGI
     HOST = '0.0.0.0'
-    PORT = 5003
+    PORT = 5004
     KEY = 'super_secret_key'
 
 
