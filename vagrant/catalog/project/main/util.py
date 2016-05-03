@@ -4,10 +4,10 @@ from flask import redirect, url_for, request, Response, make_response
 from app import SessionFields
 import json
 from types import FunctionType
-from typing import Union
+from typing import Union, Any
 
 
-def safe_get(dct: dict, *keys):
+def safe_get(dct: dict, *keys) -> Union[Any, None]:
     """
     A utility function to traverse dictionaries (JSON).
 
@@ -17,7 +17,7 @@ def safe_get(dct: dict, *keys):
 
     :param dct:
     :param keys:
-    :return:
+    :return Union[Any, None]: return either the target of the key path or None.
     """
     for key in keys:
         try:
@@ -33,7 +33,8 @@ def check_login(f: FunctionType):
     Args:
         f (FunctionType):
 
-    Returns:
+    Returns Union[FunctionType, Response]: Returns either the function to which
+    the decorator has been applied or a Response indicating failure.
 
     """
     @wraps(f)
@@ -47,17 +48,20 @@ def check_login(f: FunctionType):
 def check_state(f: FunctionType) -> Union[FunctionType, Response]:
     """
     Create a decorator to test state.
+
     May only be used within a request context.
 
     :param f:
-    :return:
+    :return Union[FunctionType, Response]: Returns either the function to which
+    the decorator has been applied or a Response indicating failure.
     """
 
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def decorated_function(*args, **kwargs) -> Union[FunctionType, Response]:
         if request.args.get('state') != login_session['state']:
             response = make_response(json.dumps('Invalid state'), 401)
             response.headers['Content-Type'] = 'application/json'
             return response
         return f(*args, **kwargs)
     return decorated_function
+
